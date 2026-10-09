@@ -1,0 +1,36 @@
+[project]
+name = "face-recognition-opencv"
+version = "0.1.0"
+description = "Recognise known people in photos and on a webcam with OpenCV (YuNet + SFace), and say 'Unknown' for everyone else, with a threshold measured on LFW."
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Morissala2001" }]
+dependencies = [
+    "numpy>=2.0",
+    "opencv-python>=5.0",
+    "pillow>=11.0",
+    "pillow-heif>=1.8.0",
+]
+
+[project.optional-dependencies]
+app = ["streamlit>=1.65"]
+eval = ["scikit-learn>=1.9"]
+
+[project.scripts]
+facerec = "facerec.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/facerec"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: needs the real models or the LFW dataset (set FACEREC_RUN_SLOW=1 to run)"]

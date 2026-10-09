@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+.DS_Store
+
+# Faces are personal (biometric) data: training photos, enrolled faces and annotated pictures stay on your machine.
+faces/
+models/
+runs/
+*.npz
+*.onnx
+
+# Evaluation reports
+eval/results/

@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Actions pinned to exact commits (setup-uv publishes no floating major tag)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Install libGL, needed to import OpenCV's desktop build (webcam window)
+        run: sudo apt-get update -q && sudo apt-get install -y -q libgl1
+      - name: Install the locked dependencies (Python version from .python-version)
+        run: uv sync --locked --all-extras
+      - name: Run the offline tests (no model, weights or dataset is downloaded)
+        run: uv run pytest
