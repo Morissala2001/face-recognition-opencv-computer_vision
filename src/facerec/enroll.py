@@ -55,6 +55,38 @@ def enroll(folder: str | Path, detector: Detector, recognizer):
     return recognizer.train(enrollment.faces, enrollment.names), enrollment
 
 
+@dataclass
+class PhotoFaces:
+    faces: list[np.ndarray] = field(default_factory=list)
+    used: list[str] = field(default_factory=list)  # the photos the faces come from
+    no_face: list[str] = field(default_factory=list)
+    several_faces: list[str] = field(default_factory=list)  # used, with their clearest face: check them
+    unreadable: list[str] = field(default_factory=list)
+
+
+def faces_in_photos(photos: list[tuple[str, bytes]], detector: Detector, recognizer) -> PhotoFaces:
+    """The face of each photo, prepared for the recognizer, in memory only: nothing is written anywhere.
+
+    `photos` are (file name, content) pairs, as uploaded. The online demo learns the visitors' faces this way.
+    """
+    found = PhotoFaces()
+    for filename, content in photos:
+        image = read_image(BytesIO(content))
+        if image is None:
+            found.unreadable.append(filename)
+            continue
+        boxes = detector.detect(image)
+        face = recognizer.prepare(image, boxes[0]) if boxes else None
+        if face is None:
+            found.no_face.append(filename)
+            continue
+        if len(boxes) > 1:
+            found.several_faces.append(filename)
+        found.faces.append(face)
+        found.used.append(filename)
+    return found
+
+
 _FORBIDDEN = set('<>:"/\\|?*')  # characters a Windows folder name cannot hold (and path separators)
 _RESERVED = {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
 

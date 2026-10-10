@@ -5,7 +5,7 @@ from conftest import FACE_BOX, FakeDetector, fake_recognizer, photo, save
 
 import facerec.recognize as recognize_module
 from facerec.detection import Box
-from facerec.enroll import add_person, collect_faces, enroll, folder_name
+from facerec.enroll import add_person, collect_faces, enroll, faces_in_photos, folder_name
 from facerec.recognize import KNOWN_COLOR, UNKNOWN_COLOR, Recognition, draw, recognize, run_webcam
 
 
@@ -145,3 +145,14 @@ def test_iphone_heic_photos_can_be_added_and_recognised(tmp_path, detector):
     recognizer, enrollment = enroll(tmp_path / "faces", detector, fake_recognizer())
     assert enrollment.per_person == {"Mori": 4}
     assert [r.name for r in recognize(photo(6, 30), detector, recognizer)] == ["Mori"]
+
+
+def test_faces_are_taken_from_uploaded_photos_in_memory_only(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    photos = [("a.png", png(photo(5, 1))), ("empty.png", png(np.zeros((90, 90, 3), np.uint8))),
+              ("group.png", png(photo(5, 3, size=(280, 500)))), ("notes.png", b"not a picture")]
+    found = faces_in_photos(photos, GroupDetector(), fake_recognizer())
+    assert found.used == ["a.png", "group.png"] and len(found.faces) == 2
+    assert found.no_face == ["empty.png"] and found.unreadable == ["notes.png"]
+    assert found.several_faces == ["group.png"]
+    assert list(tmp_path.iterdir()) == []  # nothing written

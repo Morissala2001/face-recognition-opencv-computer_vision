@@ -4,12 +4,16 @@
 
 *Recognise the people you know in photos, videos and live cameras, and say "Unknown" for everyone else.*
 
+**[▶ Try it online](https://face-recognition-morissala.streamlit.app/)** (free hosting: the first visit may take a minute to wake the app up.)
+
 ![Demo: two astronauts are added, then named on crew photos where the others are Unknown](docs/demo.gif)
 <sub>Two astronauts are learnt from older official portraits, then recognised on crew photos where the others are Unknown. Public-domain NASA photos from Wikimedia Commons.</sub>
 
 Enrol a few people with about 20 photos each, then show a photo, a video, your webcam, your phone's camera or a network camera: every face gets a name, or **Unknown** when it is nobody you enrolled. It runs on a laptop CPU with **OpenCV only**: YuNet finds the faces and their landmarks, SFace turns each aligned face into 128 numbers, and a face is named after the closest enrolled face when it is close enough. The project has a **web app** (Streamlit), a **CLI** (`facerec`) and a small **library** (`src/facerec`), with an evaluation on the public LFW benchmark.
 
 **Your photos stay on your machine.** The enrolled faces are personal (biometric) data: the `faces/` folder and the enrolled vectors are ignored by git, and the tests use synthetic images only.
+
+**Online, nothing is kept either.** The online demo learns the faces a visitor adds in the memory of their session only: nothing is written to the server, other visitors never see them, and they are forgotten when the visitor leaves. Without photos of your own, it can be tried with public-domain NASA photos (`examples/`). The phone and stream source is not offered online: the server cannot see the visitor's phone. The app switches to this mode by itself on Streamlit Community Cloud (or with `FACEREC_PUBLIC=1`).
 
 ## Why YuNet + SFace
 
@@ -78,7 +82,7 @@ The **Video file** source analyses a whole video (one frame out of N to go faste
 **Tests** (offline: synthetic faces, a fake detector, a fake network and a local server playing the phone; no model or photo needed)
 
 ```bash
-uv run pytest                                  # 48 tests
+uv run pytest                                  # 53 tests
 FACEREC_RUN_SLOW=1 uv run pytest -m slow       # with the real models and LFW
 ```
 
@@ -103,7 +107,9 @@ Also fixed along the way, compared with the tutorial's code: a training photo wi
 ## Structure
 
 ```
-├── app.py                 # Streamlit web app
+├── app.py                 # Streamlit web app (a public demo when it runs online)
+├── examples/              # public-domain NASA photos for the online demo, with their credits
+├── packages.txt           # libGL for OpenCV on Streamlit Community Cloud
 ├── src/facerec/
 │   ├── detection.py       # YuNet face detector, model download
 │   ├── recognizer.py      # SFace embeddings, nearest face, Unknown threshold

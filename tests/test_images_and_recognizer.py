@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 from conftest import FACE_BOX, fake_recognizer, photo, save, texture
@@ -45,6 +47,22 @@ def test_large_photos_are_shrunk_for_detection_and_boxes_scaled_back(tmp_path, m
     assert box.raw[4:6] == (960.0, 1280.0) and box.raw[14] == pytest.approx(0.9)  # landmarks too, score unchanged
     detector.detect(np.zeros((250, 250, 3), np.uint8))
     assert fake.sizes[-1] == (250, 250)  # small pictures are left as they are
+
+
+def test_a_model_appears_only_once_fully_downloaded(tmp_path, monkeypatch):
+    import facerec.detection as detection
+
+    def broken(url, path):
+        Path(path).write_bytes(b"half a model")
+        raise OSError("connection reset")
+
+    monkeypatch.setattr(detection.urllib.request, "urlretrieve", broken)
+    with pytest.raises(OSError):
+        detection.download("https://example.org/model.onnx", tmp_path / "model.onnx")
+    assert list(tmp_path.iterdir()) == []  # no broken model left behind
+    monkeypatch.setattr(detection.urllib.request, "urlretrieve", lambda url, path: Path(path).write_bytes(b"model"))
+    assert detection.download("https://example.org/model.onnx", tmp_path / "model.onnx").read_bytes() == b"model"
+    assert [p.name for p in tmp_path.iterdir()] == ["model.onnx"]
 
 
 def test_pictures_are_read_upright_from_any_path(tmp_path):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -90,9 +91,15 @@ def load_detector(model: str | Path = YUNET_MODEL) -> Detector:
 
 
 def download(url: str, path: str | Path) -> Path:
-    """Download a model file once."""
+    """Download a model file once. It appears only when complete: an interrupted download leaves no broken model."""
     path = Path(path)
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(url, path)
+        part = path.with_name(f"{path.name}.{os.getpid()}.part")
+        try:
+            urllib.request.urlretrieve(url, part)
+        except BaseException:
+            part.unlink(missing_ok=True)
+            raise
+        part.replace(path)
     return path

@@ -17,8 +17,10 @@ APP = Path(__file__).resolve().parents[1] / "app.py"
 
 @pytest.fixture
 def make_app(tmp_path, monkeypatch):
-    def make_app(faces=None, models=True):
+    def make_app(faces=None, models=True, public=False):
         st.cache_resource.clear()
+        if public:
+            monkeypatch.setenv("FACEREC_PUBLIC", "1")
         for name in ("YUNET", "SFACE"):
             path = tmp_path / f"{name.lower()}.onnx"
             if models:
@@ -134,3 +136,43 @@ def test_the_add_a_person_form_explains_what_is_missing(make_app):
     next(b for b in app.sidebar.button if b.label == "Add and learn").click().run()
     assert not app.exception
     assert "at least one photo" in app.sidebar.error[0].value
+
+
+def test_online_the_visitor_tries_the_astronauts_and_nothing_is_saved(make_app, tmp_path):
+    app = make_app(public=True)
+    assert "Online demo" in app.sidebar.info[0].value
+    assert "Nobody has been learnt yet" in app.warning[0].value
+    next(b for b in app.button if b.label == "Try it with NASA astronauts").click().run()
+    assert not app.exception
+    assert app.sidebar.caption[-1].value == "Christina Koch, Victor Glover"  # the people it knows
+    assert len(app.dataframe[0].value) >= 1  # the example crew photo is analysed
+    assert "Phone or stream" not in app.button_group[0].options  # the server cannot see the visitor's phone
+    assert not (tmp_path / "no_faces").exists() and not (tmp_path / "models").exists()  # nothing written
+    other = make_app(public=True)  # another visitor knows nobody
+    assert "Nobody has been learnt yet" in other.warning[0].value
+    next(b for b in app.sidebar.button if b.label == "Forget everyone").click().run()
+    assert "Nobody has been learnt yet" in app.warning[0].value
+
+
+def test_online_the_form_explains_what_is_missing_and_writes_nothing(make_app, tmp_path):
+    app = make_app(public=True)
+    app.sidebar.text_input[0].set_value("Awa Diallo")
+    next(b for b in app.sidebar.button if b.label == "Add and learn").click().run()
+    assert not app.exception
+    assert "at least one photo" in app.sidebar.error[0].value
+    assert not (tmp_path / "no_faces").exists()
+
+
+def test_online_the_models_are_downloaded_once(make_app, monkeypatch):
+    downloads = []
+
+    def download(url, path):
+        downloads.append(url)
+        path.write_bytes(b"fake")
+        return path
+
+    monkeypatch.setattr(facerec.detection, "download", download)
+    app = make_app(models=False, public=True)
+    assert not app.exception and not app.error
+    assert [url.rsplit("/", 1)[-1] for url in downloads] == ["face_detection_yunet_2023mar.onnx",
+                                                              "face_recognition_sface_2021dec.onnx"]

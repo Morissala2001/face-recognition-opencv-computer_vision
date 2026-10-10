@@ -90,6 +90,6 @@ class SFaceRecognizer:
         return self
 
 
-def new_recognizer(threshold: float = DEFAULT_THRESHOLD) -> SFaceRecognizer:
+def new_recognizer(threshold: float = DEFAULT_THRESHOLD, model: str | Path = SFACE_MODEL) -> SFaceRecognizer:
     """An empty recognizer (one place to replace it, for instance by one with a fake network in the tests)."""
-    return SFaceRecognizer(threshold)
+    return SFaceRecognizer(threshold, model)
