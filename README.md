@@ -109,7 +109,7 @@ Also fixed along the way, compared with the tutorial's code: a training photo wi
 ```
 ├── app.py                 # Streamlit web app (a public demo when it runs online)
 ├── examples/              # public-domain NASA photos for the online demo, with their credits
-├── packages.txt           # libGL for OpenCV on Streamlit Community Cloud
+├── packages.txt           # the system libraries OpenCV needs on Streamlit Community Cloud (libGL, GLib)
 ├── src/facerec/
 │   ├── detection.py       # YuNet face detector, model download
 │   ├── recognizer.py      # SFace embeddings, nearest face, Unknown threshold
